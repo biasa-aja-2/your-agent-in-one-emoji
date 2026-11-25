@@ -26,12 +26,40 @@ import os
 
 ENTRY = "🐙"
 OUTPUT_PATH = "/output/entry.txt"
+# Bounty gate: the entry must be 1-16 characters. Keep the bound explicit
+# so a future edit that pastes a caption or a second emoji fails loudly
+# here instead of silently shipping an invalid entry.
+MIN_ENTRY_CHARS = 1
+MAX_ENTRY_CHARS = 16
+
+
+def validate_entry(entry: str) -> str:
+    """Reject anything that is not a bare 1-16 character emoji entry.
+
+    A valid entry is one glyph and nothing else: no caption, no trailing
+    newline, no surrounding whitespace. Enforcing the gate in code (not
+    just in the docstring) means a bad edit breaks the run locally
+    instead of reaching the judge.
+    """
+    if not isinstance(entry, str):
+        raise TypeError("entry must be a string")
+    if not MIN_ENTRY_CHARS <= len(entry) <= MAX_ENTRY_CHARS:
+        raise ValueError(
+            f"entry must be {MIN_ENTRY_CHARS}-{MAX_ENTRY_CHARS} characters, "
+            f"got {len(entry)}"
+        )
+    if entry != entry.strip() or "\n" in entry or "\r" in entry:
+        raise ValueError("entry must be a single glyph with no whitespace")
+    if entry.isascii():
+        raise ValueError("entry must be an emoji, not plain ASCII text")
+    return entry
 
 
 def main() -> None:
+    entry = validate_entry(ENTRY)
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     with open(OUTPUT_PATH, "w", encoding="utf-8", newline="") as f:
-        f.write(ENTRY)
+        f.write(entry)
 
 
 if __name__ == "__main__":
